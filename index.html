@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#070709">
+  <meta name="description" content="LEGEND — ultra-luxury candles crafted for rooms that deserve a presence.">
+  <title>LEGEND | Luxury Candles</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M16 10h32l12 16-28 32L4 26z' fill='%231E6BFF'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <script src="store.js"></script>
+</head>
+<body class="page-store">
+
+  <!-- ===================== SVG SPRITE (logo + icons) ===================== -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="legend-diamond" viewBox="0 0 64 64">
+        <defs>
+          <linearGradient id="lgA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#C9DEFF"/><stop offset="1" stop-color="#5E9BFF"/></linearGradient>
+          <linearGradient id="lgB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6AA2FF"/><stop offset="1" stop-color="#1E6BFF"/></linearGradient>
+          <linearGradient id="lgC" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2F7BFF"/><stop offset="1" stop-color="#0A3CB0"/></linearGradient>
+          <linearGradient id="lgD" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1E6BFF"/><stop offset="1" stop-color="#062B8A"/></linearGradient>
+        </defs>
+        <g stroke="#EAF2FF" stroke-opacity="0.6" stroke-width="1" stroke-linejoin="round">
+          <polygon points="16,10 48,10 42,26 22,26" fill="url(#lgA)"/>
+          <polygon points="16,10 22,26 4,26" fill="url(#lgB)"/>
+          <polygon points="48,10 60,26 42,26" fill="url(#lgC)"/>
+          <polygon points="4,26 22,26 32,58" fill="url(#lgC)"/>
+          <polygon points="22,26 42,26 32,58" fill="url(#lgD)"/>
+          <polygon points="42,26 60,26 32,58" fill="url(#lgB)"/>
+        </g>
+        <polygon points="19,12 30,12 25,24 21,24" fill="#FFFFFF" fill-opacity="0.28"/>
+      </symbol>
+
+      <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></symbol>
+      <symbol id="i-bag" viewBox="0 0 24 24"><path d="M6 7h12l-1 13H7L6 7z"/><path d="M9 7a3 3 0 0 1 6 0"/></symbol>
+      <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 6h10"/><path d="M18 6h2"/><circle cx="16" cy="6" r="2"/><path d="M4 12h2"/><path d="M10 12h10"/><circle cx="8" cy="12" r="2"/><path d="M4 18h10"/><path d="M18 18h2"/><circle cx="16" cy="18" r="2"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></symbol>
+      <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+      <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6l-7-3z"/><path d="m9 12 2 2 4-4"/></symbol>
+      <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 3c1 3 5 5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9z"/></symbol>
+      <symbol id="i-truck" viewBox="0 0 24 24"><path d="M3 6h11v10H3z"/><path d="M14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></symbol>
+      <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"/><path d="M19 16v4M17 18h4"/></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></symbol>
+      <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></symbol>
+      <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
+      <symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></symbol>
+    </defs>
+  </svg>
+
+  <!-- ===================== HEADER ===================== -->
+  <header class="app-header" id="appHeader">
+    <div class="header-inner">
+      <div class="brand-logo" aria-hidden="true">
+        <svg viewBox="0 0 64 64"><use href="#legend-diamond"/></svg>
+      </div>
+      <div class="brand-name">LEGEND</div>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <!-- ===================== HERO ===================== -->
+    <section class="hero">
+      <div class="hero-eyebrow">Luxury Candle House</div>
+      <h1 class="hero-title">Light that feels <em>legendary</em></h1>
+      <p class="hero-sub">Hand-poured candles with rare fragrance notes, made to turn every room into an experience worth remembering.</p>
+    </section>
+
+    <!-- ===================== PRODUCT SHOWCASE ===================== -->
+    <section class="section" id="catalog" aria-labelledby="catalogTitle">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title" id="catalogTitle">The Collection</h2>
+          <p class="section-sub">Swipe sideways to explore. Every candle has its own gallery.</p>
+        </div>
+        <div class="rail-nav">
+          <button class="rail-btn" id="railPrev" type="button" aria-label="Previous candle">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><use href="#i-chevron-left"/></svg>
+          </button>
+          <button class="rail-btn" id="railNext" type="button" aria-label="Next candle">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><use href="#i-chevron-right"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="showcase" id="showcase" tabindex="0" role="region" aria-label="Candle collection"></div>
+    </section>
+
+    <!-- ===================== PROMISE ===================== -->
+    <section class="section" aria-labelledby="promiseTitle">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title" id="promiseTitle">The Legend Promise</h2>
+        </div>
+      </div>
+      <div class="promise-grid">
+        <div class="promise-item">
+          <div class="promise-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-flame"/></svg></div>
+          <h3 class="promise-title">Rare Fragrance Notes</h3>
+          <p class="promise-text">Layered scents composed to fill a room with presence, never with noise.</p>
+        </div>
+        <div class="promise-item">
+          <div class="promise-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-shield"/></svg></div>
+          <h3 class="promise-title">Crafted With Care</h3>
+          <p class="promise-text">Every candle is hand-finished and quality checked before it leaves our studio.</p>
+        </div>
+        <div class="promise-item">
+          <div class="promise-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-truck"/></svg></div>
+          <h3 class="promise-title">Secure Delivery</h3>
+          <p class="promise-text">Packed in protective luxury boxes and shipped with the care it deserves.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer class="site-footer">
+    <div class="footer-logo" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#legend-diamond"/></svg></div>
+    <div class="footer-brand">LEGEND</div>
+    <p class="footer-tag">Ultra-luxury candles for unforgettable spaces.</p>
+    <p class="powered">Powered by <b>Legend</b></p>
+  </footer>
+
+  <!-- ===================== FLOATING DOCK ===================== -->
+  <nav class="dock" aria-label="Main navigation">
+    <button class="dock-item active" type="button" data-dock="home" aria-label="Home">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-home"/></svg>
+      <span>Home</span>
+    </button>
+    <button class="dock-item" type="button" data-dock="cart" aria-label="Open cart">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-bag"/></svg>
+      <span>Cart</span>
+      <span class="dock-badge hidden" id="dockBadge">0</span>
+    </button>
+    <button class="dock-item" type="button" data-dock="settings" aria-label="Open settings">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-settings"/></svg>
+      <span>Settings</span>
+    </button>
+  </nav>
+
+  <!-- ===================== OVERLAY ===================== -->
+  <div class="overlay" id="overlay"></div>
+
+  <!-- ===================== CART / CHECKOUT DRAWER ===================== -->
+  <section class="drawer" id="cartDrawer" role="dialog" aria-modal="true" aria-labelledby="cartTitle" aria-hidden="true">
+    <div class="drawer-handle" id="drawerHandle"></div>
+    <div class="drawer-head" id="drawerHead">
+      <h2 class="drawer-title" id="cartTitle">Your Cart</h2>
+      <button class="icon-btn" type="button" data-close aria-label="Close">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
+    </div>
+    <div class="drawer-body" id="cartBody"></div>
+    <div class="drawer-foot hidden" id="cartFoot"></div>
+  </section>
+
+  <!-- ===================== SETTINGS MODAL ===================== -->
+  <div class="modal" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2 class="modal-title" id="settingsTitle">Settings</h2>
+        <button class="icon-btn" type="button" data-close aria-label="Close settings">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-close"/></svg>
+        </button>
+      </div>
+
+      <div class="setting-block">
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Dark / Light Mode</div>
+            <div class="setting-desc" id="themeDesc">Obsidian dark mode is on</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="themeSwitch" aria-label="Switch to light mode">
+            <span class="switch-track"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="setting-block">
+        <p class="block-title">Customer Quick Login</p>
+        <div id="loginArea"></div>
+      </div>
+
+      <div class="setting-block">
+        <p class="block-title">Admin Access</p>
+        <button class="btn btn-outline btn-block" type="button" id="adminToggle">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-lock"/></svg>
+          Admin Access
+        </button>
+        <div class="hidden mt-1" id="pinBox">
+          <div class="pin-row">
+            <input type="password" id="pinInput" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="PIN" aria-label="Admin PIN">
+            <button class="btn btn-primary" type="button" id="pinSubmit">Enter</button>
+          </div>
+          <p class="coupon-msg err" id="pinError" role="alert"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== TOASTS ===================== -->
+  <div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
+
+  <noscript>
+    <p style="padding:24px;text-align:center">Please enable JavaScript to view the LEGEND store.</p>
+  </noscript>
+
+  <script src="app.js"></script>
+</body>
+</html>
