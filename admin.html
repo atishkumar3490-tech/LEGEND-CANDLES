@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#070709">
+  <meta name="robots" content="noindex, nofollow">
+  <title>LEGEND | Admin Command Center</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M16 10h32l12 16-28 32L4 26z' fill='%231E6BFF'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <script src="store.js"></script>
+</head>
+<body class="page-admin">
+
+  <!-- ===================== SVG SPRITE (logo + icons) ===================== -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <defs>
+      <symbol id="legend-diamond" viewBox="0 0 64 64">
+        <defs>
+          <linearGradient id="lgA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#C9DEFF"/><stop offset="1" stop-color="#5E9BFF"/></linearGradient>
+          <linearGradient id="lgB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6AA2FF"/><stop offset="1" stop-color="#1E6BFF"/></linearGradient>
+          <linearGradient id="lgC" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2F7BFF"/><stop offset="1" stop-color="#0A3CB0"/></linearGradient>
+          <linearGradient id="lgD" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1E6BFF"/><stop offset="1" stop-color="#062B8A"/></linearGradient>
+        </defs>
+        <g stroke="#EAF2FF" stroke-opacity="0.6" stroke-width="1" stroke-linejoin="round">
+          <polygon points="16,10 48,10 42,26 22,26" fill="url(#lgA)"/>
+          <polygon points="16,10 22,26 4,26" fill="url(#lgB)"/>
+          <polygon points="48,10 60,26 42,26" fill="url(#lgC)"/>
+          <polygon points="4,26 22,26 32,58" fill="url(#lgC)"/>
+          <polygon points="22,26 42,26 32,58" fill="url(#lgD)"/>
+          <polygon points="42,26 60,26 32,58" fill="url(#lgB)"/>
+        </g>
+        <polygon points="19,12 30,12 25,24 21,24" fill="#FFFFFF" fill-opacity="0.28"/>
+      </symbol>
+
+      <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></symbol>
+      <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 4H5v16h4"/><path d="m16 8 4 4-4 4"/><path d="M20 12H9"/></symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/></symbol>
+      <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></symbol>
+      <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 12a8.5 8.5 0 0 1-12.4 7.5L3 21l1.6-5.4A8.5 8.5 0 1 1 21 12z"/></symbol>
+      <symbol id="i-bag" viewBox="0 0 24 24"><path d="M6 7h12l-1 13H7L6 7z"/><path d="M9 7a3 3 0 0 1 6 0"/></symbol>
+      <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    </defs>
+  </svg>
+
+  <!-- ===================== PIN GATE ===================== -->
+  <div class="pin-gate" id="pinGate" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
+    <div class="pin-card">
+      <div class="brand-logo" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#legend-diamond"/></svg></div>
+      <div class="brand-name">LEGEND</div>
+      <h1 class="panel-title" id="gateTitle">Admin Access</h1>
+      <p class="panel-sub">Enter your 4-digit PIN to open the command center.</p>
+      <input type="password" class="pin-input" id="gatePin" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="&bull;&bull;&bull;&bull;" aria-label="Admin PIN">
+      <div class="pin-error" id="gateError" role="alert"></div>
+      <button class="btn btn-primary btn-block" id="gateBtn" type="button">Unlock</button>
+      <a class="btn btn-ghost btn-block" href="index.html">Back to Store</a>
+    </div>
+  </div>
+
+  <!-- ===================== ADMIN APP ===================== -->
+  <div id="adminApp" class="hidden">
+
+    <header class="admin-topbar">
+      <div class="admin-brand">
+        <div class="brand-logo" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#legend-diamond"/></svg></div>
+        <div class="admin-brand-text"><strong>LEGEND</strong><span>Command Center</span></div>
+      </div>
+      <div class="admin-top-actions">
+        <button class="icon-btn" id="themeBtn" type="button" aria-label="Switch light or dark mode"></button>
+        <a class="icon-btn" href="index.html" aria-label="Back to store">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-arrow-left"/></svg>
+        </a>
+        <button class="icon-btn" id="logoutBtn" type="button" aria-label="Log out of admin">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-logout"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="admin-shell">
+
+      <div class="stat-grid" id="statGrid"></div>
+
+      <nav class="admin-tabs" id="adminTabs" role="tablist" aria-label="Admin sections">
+        <button class="tab-btn active" type="button" role="tab" data-tab="orders" aria-selected="true">Live Orders <span class="tab-count" id="tabCountOrders">0</span></button>
+        <button class="tab-btn" type="button" role="tab" data-tab="products" aria-selected="false">Products <span class="tab-count" id="tabCountProducts">0</span></button>
+        <button class="tab-btn" type="button" role="tab" data-tab="tax" aria-selected="false">Tax &amp; Shipping</button>
+        <button class="tab-btn" type="button" role="tab" data-tab="payments" aria-selected="false">Payments</button>
+        <button class="tab-btn" type="button" role="tab" data-tab="coupons" aria-selected="false">VIP Coupons <span class="tab-count" id="tabCountCoupons">0</span></button>
+      </nav>
+
+      <!-- ============ TAB: LIVE ORDERS ============ -->
+      <section class="tab-panel active" id="tab-orders" role="tabpanel">
+        <div class="filter-row" id="orderFilters"></div>
+        <div class="order-list" id="orderList"></div>
+      </section>
+
+      <!-- ============ TAB: PRODUCTS ============ -->
+      <section class="tab-panel" id="tab-products" role="tabpanel">
+
+        <div class="panel-card" id="productFormCard">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title" id="formTitle">Add New Product</h2>
+              <p class="panel-sub">Images swipe sideways on the storefront. The first image is the cover.</p>
+            </div>
+          </div>
+
+          <form id="productForm" novalidate autocomplete="off">
+            <div class="form-grid">
+              <div class="field field-full">
+                <label for="pName">Product Name</label>
+                <input id="pName" type="text" maxlength="60" placeholder="e.g. Obsidian Oud">
+              </div>
+              <div class="field field-full">
+                <label for="pNotes">Scent Notes</label>
+                <input id="pNotes" type="text" maxlength="120" placeholder="e.g. Smoked Oud, Black Amber, Vetiver">
+                <span class="hint">Separate notes with commas. They appear as chips on the product card.</span>
+              </div>
+              <div class="field">
+                <label for="pMrp">MRP (&#8377;)</label>
+                <input id="pMrp" type="number" inputmode="decimal" min="0" step="any" placeholder="2999">
+              </div>
+              <div class="field">
+                <label for="pPrice">Selling Price (&#8377;)</label>
+                <input id="pPrice" type="number" inputmode="decimal" min="0" step="any" placeholder="2299">
+              </div>
+              <div class="field">
+                <label for="pLeft">&ldquo;Only X Left&rdquo; Badge</label>
+                <input id="pLeft" type="number" inputmode="numeric" min="0" step="1" placeholder="0 = hide badge">
+              </div>
+              <div class="field">
+                <label for="pVideo">Video URL (optional MP4)</label>
+                <input id="pVideo" type="url" placeholder="https://example.com/candle.mp4">
+              </div>
+
+              <div class="toggle-card field-full">
+                <div>
+                  <div class="setting-label">In Stock</div>
+                  <div class="setting-desc" id="pStockDesc">Customers can add this candle to their cart.</div>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="pStock" checked aria-label="In stock">
+                  <span class="switch-track"></span>
+                </label>
+              </div>
+
+              <div class="stack field-full">
+                <span class="field-label">Gallery (swipe images)</span>
+                <div class="thumb-list" id="thumbList"></div>
+                <label class="upload-zone">
+                  <input type="file" id="imgFiles" accept="image/*" multiple>
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-upload"/></svg>
+                  <span id="uploadText">Upload from phone gallery</span>
+                </label>
+                <div class="field">
+                  <label for="imgUrls">Or paste image URLs (one per line)</label>
+                  <textarea id="imgUrls" rows="3" placeholder="https://example.com/candle-1.jpg&#10;https://example.com/candle-2.jpg"></textarea>
+                </div>
+                <button class="btn btn-outline btn-sm" id="addUrls" type="button">Add URLs to Gallery</button>
+                <span class="hint">Tap a thumbnail to make it the cover image. Uploaded photos are resized automatically to save space.</span>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button class="btn btn-primary" id="saveProduct" type="submit">Save Product</button>
+              <button class="btn" id="formReset" type="button">Clear Form</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">Your Products</h2>
+              <p class="panel-sub" id="productCount">0 products</p>
+            </div>
+          </div>
+          <div id="storageMeter" class="mb-2"></div>
+          <div id="productList"></div>
+        </div>
+      </section>
+
+      <!-- ============ TAB: TAX & SHIPPING ============ -->
+      <section class="tab-panel" id="tab-tax" role="tabpanel">
+        <form id="taxForm" novalidate autocomplete="off">
+          <div class="panel-card">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title">GST</h2>
+                <p class="panel-sub">Added on the discounted order value at checkout. Changes apply live.</p>
+              </div>
+            </div>
+            <div class="toggle-card">
+              <div>
+                <div class="setting-label">Charge GST</div>
+                <div class="setting-desc">Show a GST line in the customer bill</div>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="gstEnabled" aria-label="Charge GST">
+                <span class="switch-track"></span>
+              </label>
+            </div>
+            <div class="form-grid mt-2">
+              <div class="field">
+                <label for="gstPercent">GST Percentage (%)</label>
+                <input id="gstPercent" type="number" inputmode="decimal" min="0" max="100" step="any" placeholder="18">
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-card">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title">Delivery</h2>
+                <p class="panel-sub">Set a flat charge and a free-delivery threshold.</p>
+              </div>
+            </div>
+            <div class="form-grid">
+              <div class="field">
+                <label for="deliveryCharge">Delivery Charge (&#8377;)</label>
+                <input id="deliveryCharge" type="number" inputmode="decimal" min="0" step="any" placeholder="79">
+              </div>
+              <div class="field">
+                <label for="freeAbove">Free Delivery Above (&#8377;)</label>
+                <input id="freeAbove" type="number" inputmode="decimal" min="0" step="any" placeholder="1999">
+                <span class="hint">Enter 0 to never offer free delivery.</span>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" type="submit">Save Tax &amp; Shipping</button>
+            </div>
+          </div>
+        </form>
+
+        <div class="panel-card">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">Live Preview</h2>
+              <p class="panel-sub">What a customer pays on a &#8377;1,000 order with your current settings.</p>
+            </div>
+          </div>
+          <div class="bill" id="taxPreview"></div>
+        </div>
+      </section>
+
+      <!-- ============ TAB: PAYMENTS ============ -->
+      <section class="tab-panel" id="tab-payments" role="tabpanel">
+        <form id="payForm" novalidate autocomplete="off">
+          <div class="panel-card">
+            <div class="panel-head">
+              <div>
+                <h2 class="panel-title">UPI Payments</h2>
+                <p class="panel-sub">Checkout generates a payment link and QR with the exact bill amount, then asks for the UTR.</p>
+              </div>
+            </div>
+            <div class="field">
+              <label for="upiId">Your UPI ID</label>
+              <input id="upiId" type="text" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="e.g. legend@okaxis">
+              <span class="hint">Leave empty to switch UPI payments off.</span>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" type="submit">Save UPI ID</button>
+            </div>
+            <div class="mt-2" id="upiPreview"></div>
+          </div>
+        </form>
+
+        <div class="panel-card">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">Cash on Delivery</h2>
+              <p class="panel-sub">Turn COD on or off instantly.</p>
+            </div>
+          </div>
+          <div class="toggle-card">
+            <div>
+              <div class="setting-label">Accept COD orders</div>
+              <div class="setting-desc">Customers pay in cash when the order arrives</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="codEnabled" aria-label="Accept cash on delivery">
+              <span class="switch-track"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">Checkout Status</h2>
+              <p class="panel-sub">What customers can use right now.</p>
+            </div>
+          </div>
+          <div id="payStatus"></div>
+        </div>
+      </section>
+
+      <!-- ============ TAB: VIP COUPONS ============ -->
+      <section class="tab-panel" id="tab-coupons" role="tabpanel">
+        <div class="panel-card">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">Create VIP Coupon</h2>
+              <p class="panel-sub">Add a customer name to make it personal. Only that name can use it.</p>
+            </div>
+          </div>
+          <form id="couponForm" novalidate autocomplete="off">
+            <div class="form-grid">
+              <div class="field">
+                <label for="cCode">Coupon Code</label>
+                <input id="cCode" type="text" maxlength="24" autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="e.g. VIPRAHUL500">
+              </div>
+              <div class="field">
+                <label for="cType">Discount Type</label>
+                <select id="cType">
+                  <option value="flat">&#8377; Flat amount off</option>
+                  <option value="percent">% Percentage off</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="cValue" id="cValueLabel">Discount (&#8377;)</label>
+                <input id="cValue" type="number" inputmode="decimal" min="0" step="any" placeholder="500">
+              </div>
+              <div class="field">
+                <label for="cName">Customer Name (optional)</label>
+                <input id="cName" type="text" maxlength="40" placeholder="e.g. Rahul Sharma">
+                <span class="hint" id="cNameHint"></span>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" type="submit">Create Coupon</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">Active Coupons</h2>
+              <p class="panel-sub" id="couponCount">0 coupons</p>
+            </div>
+          </div>
+          <div id="couponList"></div>
+        </div>
+      </section>
+
+      <p class="powered text-center" style="margin-top:28px">Powered by <b>Legend</b></p>
+    </main>
+  </div>
+
+  <!-- ===================== TOASTS ===================== -->
+  <div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
+
+  <noscript>
+    <p style="padding:24px;text-align:center">Please enable JavaScript to use the LEGEND admin panel.</p>
+  </noscript>
+
+  <script src="admin.js"></script>
+</body>
+  </html>
