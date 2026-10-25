@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LEGEND Image Optimizer</title>
+  <style>
+    body { background: #070709; color: #F8F9FA; font-family: sans-serif; text-align: center; padding: 16px; margin: 0; }
+    .container { max-width: 440px; margin: auto; background: #111318; padding: 20px; border-radius: 16px; border: 1px solid rgba(56, 182, 255, 0.25); }
+    h3 { color: #5CE1E6; letter-spacing: 4px; margin: 0 0 8px 0; font-weight: 600; }
+    p { font-size: 12px; color: #8A8D93; margin-bottom: 16px; }
+    input[type="file"], select { width: 100%; padding: 10px; margin-bottom: 12px; background: #1A1D24; color: #fff; border: 1px solid #2D323E; border-radius: 8px; font-size: 13px; }
+    .stats { font-size: 13px; color: #5CE1E6; margin: 10px 0; font-weight: bold; }
+    .btn { display: none; background: linear-gradient(135deg, #1E6BFF, #5CE1E6); color: #070709; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 800; letter-spacing: 1.5px; margin-top: 8px; font-size: 13px; }
+    canvas { max-width: 100%; border-radius: 10px; margin-top: 14px; display: none; border: 1px solid #222; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h3>L E G E N D</h3>
+    <p>6MB Photo ➔ 70KB Fast WebP Converter</p>
+
+    <input type="file" id="upload" accept="image/*">
+
+    <select id="modeSelect">
+      <option value="wireframe">1. Cover Gemini Star + Add Wireframe Diamond Logo</option>
+      <option value="hideOnly">2. Only Hide Gemini Corner Star (No Logo)</option>
+      <option value="none">3. Only Compress to WebP (No Touch)</option>
+    </select>
+
+    <div class="stats" id="info">फोटो सेलेक्ट करें...</div>
+    <a id="downloadBtn" class="btn">DOWNLOAD .WEBP PHOTO</a>
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <script>
+    const upload = document.getElementById('upload');
+    const modeSelect = document.getElementById('modeSelect');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const info = document.getElementById('info');
+    const downloadBtn = document.getElementById('downloadBtn');
+    let currentFile = null;
+
+    upload.addEventListener('change', (e) => {
+      if (e.target.files[0]) {
+        currentFile = e.target.files[0];
+        processImage();
+      }
+    });
+
+    modeSelect.addEventListener('change', () => {
+      if (currentFile) processImage();
+    });
+
+    function drawWireframeDiamond(ctx, cx, cy, size) {
+      const grad = ctx.createLinearGradient(cx - size, cy - size, cx + size, cy + size);
+      grad.addColorStop(0, '#1E6BFF');
+      grad.addColorStop(0.5, '#70F3FF');
+      grad.addColorStop(1, '#2684FF');
+
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = Math.max(1.8, size * 0.055);
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+
+      const topY = cy - size * 0.65;
+      const midY = cy - size * 0.22;
+      const botY = cy + size * 0.75;
+
+      const topW = size * 0.52;
+      const midW = size * 0.95;
+
+      // बाहरी डायमंड का ढांचा
+      ctx.beginPath();
+      ctx.moveTo(cx - topW, topY);
+      ctx.lineTo(cx + topW, topY);
+      ctx.lineTo(cx + midW, midY);
+      ctx.lineTo(cx, botY);
+      ctx.lineTo(cx - midW, midY);
+      ctx.closePath();
+      ctx.stroke();
+
+      // बीच की हॉरिजॉन्टल लाइन (Girdle)
+      ctx.beginPath();
+      ctx.moveTo(cx - midW, midY);
+      ctx.lineTo(cx + midW, midY);
+      ctx.stroke();
+
+      // अंदर की वायरफ्रेम लाइन्स (Facets)
+      const c1 = cx - midW * 0.48;
+      const c2 = cx;
+      const c3 = cx + midW * 0.48;
+      const t1 = cx - topW * 0.45;
+      const t2 = cx + topW * 0.45;
+
+      ctx.beginPath();
+      // ऊपर के ट्रायंगल्स
+      ctx.moveTo(cx - topW, topY); ctx.lineTo(c1, midY);
+      ctx.moveTo(t1, topY); ctx.lineTo(c1, midY);
+      ctx.moveTo(t1, topY); ctx.lineTo(c2, midY);
+      ctx.moveTo(t2, topY); ctx.lineTo(c2, midY);
+      ctx.moveTo(t2, topY); ctx.lineTo(c3, midY);
+      ctx.moveTo(cx + topW, topY); ctx.lineTo(c3, midY);
+
+      // नीचे की नोक से जुड़ती लाइन्स
+      ctx.moveTo(c1, midY); ctx.lineTo(cx, botY);
+      ctx.moveTo(c2, midY); ctx.lineTo(cx, botY);
+      ctx.moveTo(c3, midY); ctx.lineTo(cx, botY);
+      ctx.stroke();
+
+      // नीचे L E G E N D टेक्स्ट
+      ctx.fillStyle = grad;
+      const fontSize = Math.max(10, Math.floor(size * 0.28));
+      ctx.font = `700 ${fontSize}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('L E G E N D', cx, botY + fontSize * 1.35);
+    }
+
+    function processImage() {
+      const oldSize = (currentFile.size / (1024 * 1024)).toFixed(2) + ' MB';
+      const img = new Image();
+
+      img.onload = () => {
+        const maxW = 1080;
+        const scale = img.width > maxW ? maxW / img.width : 1;
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        const mode = modeSelect.value;
+        const cornerSize = Math.min(canvas.width, canvas.height) * 0.14;
+        const cx = canvas.width - cornerSize * 0.72;
+        const cy = canvas.height - cornerSize * 0.72;
+
+        if (mode === 'wireframe' || mode === 'hideOnly') {
+          // बिना किसी चौकोर डब्बे के कोने के स्टार को स्मूथ डार्क शैडो से गायब करना
+          const radGrad = ctx.createRadialGradient(cx, cy, cornerSize * 0.1, cx, cy, cornerSize * 0.95);
+          radGrad.addColorStop(0, 'rgba(10, 10, 14, 0.98)');
+          radGrad.addColorStop(0.65, 'rgba(10, 10, 14, 0.88)');
+          radGrad.addColorStop(1, 'rgba(10, 10, 14, 0)');
+
+          ctx.fillStyle = radGrad;
+          ctx.beginPath();
+          ctx.arc(cx, cy, cornerSize, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        if (mode === 'wireframe') {
+          drawWireframeDiamond(ctx, cx, cy - cornerSize * 0.08, cornerSize * 0.36);
+        }
+
+        canvas.style.display = 'block';
+        canvas.toBlob((blob) => {
+          const newSize = (blob.size / 1024).toFixed(1) + ' KB';
+          info.innerText = `Size: ${oldSize} ➔ ${newSize} (Ready!)`;
+          downloadBtn.href = URL.createObjectURL(blob);
+          downloadBtn.download = 'legend-' + Date.now() + '.webp';
+          downloadBtn.style.display = 'inline-block';
+        }, 'image/webp', 0.82);
+      };
+      img.src = URL.createObjectURL(currentFile);
+    }
+  </script>
+</body>
+</html>
