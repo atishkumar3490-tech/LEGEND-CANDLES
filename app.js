@@ -2,9 +2,10 @@
    LEGEND — app.js   (FILE 4 of 6)
    Customer Storefront Logic ONLY
    -----------------------------------------------------------------------------
-   Rendering products, horizontal media swipe, cart + GST/delivery calculation,
-   VIP coupon verification, UPI / COD checkout, settings modal, theme switch
-   and quick login. All data comes from window.LegendStore (store.js).
+   Live Firebase catalogue (The Collection + Luxury Gifting), horizontal media
+   swipe, cart + GST / delivery calculation, VIP coupon verification, strict
+   delivery capture, UPI / COD checkout, VIP Club panel, theme switch and the
+   hidden admin PIN. All data comes from window.LegendStore (store.js).
    ============================================================================= */
 (function () {
   'use strict';
@@ -16,12 +17,34 @@
   }
 
   /* ---------------------------------------------------------------------------
-     1. HELPERS
+     1. HELPERS & REFERENCES
      --------------------------------------------------------------------------- */
   const $ = function (sel, root) { return (root || document).querySelector(sel); };
   const $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
   const esc = S.escapeHTML;
   const inr = S.formatINR;
+  const FIELDS = ['name', 'phone', 'pincode', 'flat', 'area', 'landmark'];
+
+  const PERKS = [
+    ['sparkle', 'Personal VIP coupons', 'Privileges issued in your name unlock at checkout.'],
+    ['truck', 'Faster checkout', 'Your delivery details are remembered on this device.'],
+    ['shield', 'WhatsApp order updates', 'Confirmations and status updates on your mobile number.']
+  ];
+
+  const RAIL_CFG = {
+    candles: {
+      category: 'candles',
+      icon: 'flame',
+      title: 'Collection arriving soon',
+      text: 'Our next candles are being poured. Please check back shortly.'
+    },
+    hampers: {
+      category: 'hampers',
+      icon: 'gift',
+      title: 'Gift boxes arriving soon',
+      text: 'Our luxury hampers and VIP boxes are being prepared.'
+    }
+  };
 
   function ico(name, size) {
     const px = size || 20;
@@ -30,9 +53,6 @@
 
   const el = {
     header: $('#appHeader'),
-    showcase: $('#showcase'),
-    railPrev: $('#railPrev'),
-    railNext: $('#railNext'),
     overlay: $('#overlay'),
     drawer: $('#cartDrawer'),
     drawerHead: $('#drawerHead'),
@@ -40,29 +60,33 @@
     cartTitle: $('#cartTitle'),
     cartBody: $('#cartBody'),
     cartFoot: $('#cartFoot'),
-    settings: $('#settingsModal'),
+    vipModal: $('#vipModal'),
+    vipBody: $('#vipBody'),
     themeSwitch: $('#themeSwitch'),
     themeDesc: $('#themeDesc'),
-    loginArea: $('#loginArea'),
-    adminToggle: $('#adminToggle'),
-    pinBox: $('#pinBox'),
+    pinModal: $('#pinModal'),
     pinInput: $('#pinInput'),
     pinSubmit: $('#pinSubmit'),
     pinError: $('#pinError'),
+    adminLink: $('#adminLink'),
     badge: $('#dockBadge'),
     toastWrap: $('#toastWrap')
   };
+  const rails = { candles: $('#showcaseCandles'), hampers: $('#showcaseHampers') };
   const dockItems = $$('.dock-item');
 
   const state = {
-    layer: null,          // 'cart' | 'settings' | null
-    view: 'cart',         // 'cart' | 'checkout' | 'success'
+    loaded: false,
+    layer: null,           // 'cart' | 'vip' | 'pin' | null
+    view: 'cart',          // 'cart' | 'checkout' | 'success'
     coupon: null,
     couponCode: '',
-    couponMsg: null,      // { type: 'ok' | 'err', text }
+    couponMsg: null,       // { type: 'ok' | 'err', text }
+    couponBusy: false,
     welcome: '',
     payMethod: 'UPI',
-    form: { name: '', phone: '', address: '', utr: '' },
+    form: { name: '', phone: '', pincode: '', flat: '', area: '', landmark: '', utr: '' },
+    errors: {},
     lastOrder: null,
     placing: false,
     checkoutError: ''
@@ -73,7 +97,7 @@
   let pinLockUntil = 0;
 
   /* ---------------------------------------------------------------------------
-     2. TOASTS & CLIPBOARD
+     2. TOASTS, CLIPBOARD, SCROLL
      --------------------------------------------------------------------------- */
   function toast(message, type) {
     const t = document.createElement('div');
@@ -109,24 +133,25 @@
     }
   }
 
-  function scrollToCatalog() {
-    const target = $('#catalog');
+  function scrollToSection(id) {
+    const target = $('#' + id);
     if (!target) return;
     const y = target.getBoundingClientRect().top + window.scrollY - (el.header.offsetHeight + 6);
     window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
   }
 
   /* ---------------------------------------------------------------------------
-     3. PRODUCT SHOWCASE
+     3. PRODUCT SHOWCASES  (The Collection + Luxury Gifting)
      --------------------------------------------------------------------------- */
   function splitNotes(text) {
     return String(text || '').split(/[,•|·]+/).map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 6);
   }
 
-  function productCardHTML(p, index) {
-    const images = p.images.length ? p.images : [S.placeholderImage];
-    const slides = images.map(function (src, k) {
-      return '<div class="media-slide"><img src="' + esc(src) + '" alt="' + esc(p.name) + ' view ' + (k + 1) + '" ' +
+  function productCardHTML(p, index, animate) {
+    const fallbackRef = p.category === 'hampers' ? 'art:hamper:sapphire:0' : 'art:candle:amber:0';
+    const refs = p.images.length ? p.images : [fallbackRef];
+    const slides = refs.map(function (ref, k) {
+      return '<div class="media-slide"><img src="' + esc(S.imageSrc(ref)) + '" alt="' + esc(p.name) + ' view ' + (k + 1) + '" ' +
         (k === 0 ? '' : 'loading="lazy" ') + 'decoding="async" draggable="false"></div>';
     });
     if (p.video) {
@@ -137,6 +162,7 @@
 
     const badges = [];
     if (off > 0) badges.push('<span class="badge badge-off">' + off + '% OFF</span>');
+    if (p.category === 'hampers') badges.push('<span class="badge badge-gift">Gift Set</span>');
     if (p.inStock && p.onlyLeft > 0) badges.push('<span class="badge badge-left">Only ' + p.onlyLeft + ' Left</span>');
 
     const dots = total > 1
@@ -148,7 +174,8 @@
       ? '<button class="btn btn-primary" type="button" data-add="' + esc(p.id) + '">' + ico('plus', 18) + 'Add to Cart</button>'
       : '<button class="btn" type="button" disabled>Sold Out</button>';
 
-    return '<article class="product-card' + (p.inStock ? '' : ' is-oos') + '" data-id="' + esc(p.id) + '" style="animation-delay:' + (Math.min(index, 8) * 70) + 'ms">' +
+    return '<article class="product-card' + (p.inStock ? '' : ' is-oos') + '" data-id="' + esc(p.id) + '" style="' +
+      (animate ? 'animation-delay:' + (Math.min(index, 8) * 70) + 'ms' : 'animation:none') + '">' +
       '<div class="media-wrap">' +
         (badges.length ? '<div class="badge-stack">' + badges.join('') + '</div>' : '') +
         (total > 1 ? '<div class="media-count">1 / ' + total + '</div>' : '') +
@@ -169,19 +196,51 @@
     '</article>';
   }
 
-  function renderCatalog() {
-    const prevLeft = el.showcase.scrollLeft;
-    const products = S.getProducts();
-    if (!products.length) {
-      el.showcase.innerHTML = '<div class="empty" style="flex:1 1 100%">' + ico('flame', 54) +
-        '<div class="empty-title">Collection arriving soon</div><p>Our next candles are being poured. Please check back shortly.</p></div>';
-      return;
-    }
-    el.showcase.innerHTML = products.map(productCardHTML).join('');
-    el.showcase.scrollLeft = prevLeft;
+  function emptyRailHTML(cfg) {
+    return '<div class="empty" style="flex:1 1 100%">' + ico(cfg.icon, 54) +
+      '<div class="empty-title">' + esc(cfg.title) + '</div><p>' + esc(cfg.text) + '</p></div>';
   }
 
-  function syncRail(rail) {
+  function errorRailHTML(message) {
+    return '<div class="empty" style="flex:1 1 100%">' + ico('shield', 54) +
+      '<div class="empty-title">We could not load the store</div><p>' + esc(message) + '</p>' +
+      '<button class="btn btn-primary mt-1" type="button" data-act="reload">Try Again</button></div>';
+  }
+
+  function renderRail(key) {
+    const cfg = RAIL_CFG[key];
+    const rail = rails[key];
+    const list = S.getProducts(cfg.category);
+    const status = S.getStatus();
+    const err = !list.length && status.error ? status.error : '';
+    const sig = JSON.stringify([list, err]);
+    if (rail._sig === sig) return;
+    rail._sig = sig;
+
+    if (!list.length) {
+      rail._rendered = false;
+      rail.innerHTML = err ? errorRailHTML(err) : emptyRailHTML(cfg);
+      return;
+    }
+    const prevLeft = rail.scrollLeft;
+    const animate = !rail._rendered;
+    rail.innerHTML = list.map(function (p, i) { return productCardHTML(p, i, animate); }).join('');
+    rail._rendered = true;
+    rail.scrollLeft = prevLeft;
+  }
+
+  function renderAllRails() {
+    renderRail('candles');
+    renderRail('hampers');
+  }
+
+  function showSkeletons() {
+    const html = '<div class="card-skeleton skeleton"></div><div class="card-skeleton skeleton"></div><div class="card-skeleton skeleton"></div>';
+    rails.candles.innerHTML = html;
+    rails.hampers.innerHTML = html;
+  }
+
+  function syncGallery(rail) {
     const w = rail.clientWidth || 1;
     const idx = Math.round(rail.scrollLeft / w);
     const wrap = rail.parentNode;
@@ -195,19 +254,24 @@
     });
   }
 
-  // scroll events do not bubble, so listen in the capture phase
-  el.showcase.addEventListener('scroll', function (e) {
-    const rail = e.target;
-    if (!rail || !rail.classList || !rail.classList.contains('media-rail')) return;
-    if (rail._ticking) return;
-    rail._ticking = true;
-    requestAnimationFrame(function () {
-      rail._ticking = false;
-      syncRail(rail);
-    });
-  }, true);
+  Object.keys(rails).forEach(function (key) {
+    // scroll events do not bubble, so listen in the capture phase
+    rails[key].addEventListener('scroll', function (e) {
+      const rail = e.target;
+      if (!rail || !rail.classList || !rail.classList.contains('media-rail')) return;
+      if (rail._ticking) return;
+      rail._ticking = true;
+      requestAnimationFrame(function () {
+        rail._ticking = false;
+        syncGallery(rail);
+      });
+    }, true);
+  });
 
-  el.showcase.addEventListener('click', function (e) {
+  document.addEventListener('click', function (e) {
+    const reload = e.target.closest('[data-act="reload"]');
+    if (reload) { window.location.reload(); return; }
+
     const btn = e.target.closest('[data-add]');
     if (!btn) return;
     const res = S.addToCart(btn.getAttribute('data-add'), 1);
@@ -219,13 +283,15 @@
     setTimeout(function () { btn.innerHTML = original; btn.disabled = false; }, 1100);
   });
 
-  function scrollRail(dir) {
-    const card = $('.product-card', el.showcase);
-    const step = card ? card.offsetWidth + 18 : 340;
-    el.showcase.scrollBy({ left: dir * step, behavior: 'smooth' });
-  }
-  el.railPrev.addEventListener('click', function () { scrollRail(-1); });
-  el.railNext.addEventListener('click', function () { scrollRail(1); });
+  $$('[data-rail]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const rail = rails[btn.getAttribute('data-rail')];
+      if (!rail) return;
+      const card = $('.product-card', rail);
+      const step = card ? card.offsetWidth + 18 : 340;
+      rail.scrollBy({ left: parseInt(btn.getAttribute('data-dir'), 10) * step, behavior: 'smooth' });
+    });
+  });
 
   /* ---------------------------------------------------------------------------
      4. CART BADGE
@@ -242,7 +308,7 @@
   }
 
   /* ---------------------------------------------------------------------------
-     5. LAYERS (cart drawer / settings modal)
+     5. LAYERS  (cart drawer, VIP Club modal, admin PIN modal)
      --------------------------------------------------------------------------- */
   function setDockActive(name) {
     dockItems.forEach(function (b) {
@@ -251,7 +317,6 @@
   }
 
   function resetPin() {
-    el.pinBox.classList.add('hidden');
     el.pinInput.value = '';
     el.pinError.textContent = '';
   }
@@ -261,8 +326,10 @@
     el.drawer.classList.remove('open');
     el.drawer.setAttribute('aria-hidden', 'true');
     el.drawer.style.transform = '';
-    el.settings.classList.remove('open');
-    el.settings.setAttribute('aria-hidden', 'true');
+    el.vipModal.classList.remove('open');
+    el.vipModal.setAttribute('aria-hidden', 'true');
+    el.pinModal.classList.remove('open');
+    el.pinModal.setAttribute('aria-hidden', 'true');
     el.overlay.classList.remove('open');
     document.body.classList.remove('no-scroll');
     if (state.view === 'success') {
@@ -279,6 +346,7 @@
     state.layer = name;
     document.body.classList.add('no-scroll');
     el.overlay.classList.add('open');
+
     if (name === 'cart') {
       if (state.view === 'success') state.view = 'cart';
       state.checkoutError = '';
@@ -287,13 +355,18 @@
       el.cartBody.scrollTop = 0;
       el.drawer.classList.add('open');
       el.drawer.setAttribute('aria-hidden', 'false');
-    } else {
+    } else if (name === 'vip') {
       syncThemeSwitch();
-      renderLogin();
-      el.settings.classList.add('open');
-      el.settings.setAttribute('aria-hidden', 'false');
+      renderVip();
+      el.vipModal.classList.add('open');
+      el.vipModal.setAttribute('aria-hidden', 'false');
+    } else if (name === 'pin') {
+      resetPin();
+      el.pinModal.classList.add('open');
+      el.pinModal.setAttribute('aria-hidden', 'false');
+      setTimeout(function () { el.pinInput.focus(); }, 140);
     }
-    setDockActive(name);
+    setDockActive(name === 'cart' || name === 'vip' ? name : 'home');
   }
 
   $('.dock').addEventListener('click', function (e) {
@@ -303,7 +376,7 @@
     if (which === 'home') {
       closeLayer();
       if (window.scrollY > 140) window.scrollTo({ top: 0, behavior: 'smooth' });
-      else scrollToCatalog();
+      else scrollToSection('collection');
     } else if (state.layer === which) {
       closeLayer();
     } else {
@@ -311,8 +384,11 @@
     }
   });
 
+  el.adminLink.addEventListener('click', function () { openLayer('pin'); });
   el.overlay.addEventListener('click', closeLayer);
-  el.settings.addEventListener('click', function (e) { if (e.target === el.settings) closeLayer(); });
+  [el.vipModal, el.pinModal].forEach(function (m) {
+    m.addEventListener('click', function (e) { if (e.target === m) closeLayer(); });
+  });
   document.addEventListener('click', function (e) {
     if (e.target.closest('[data-close]')) closeLayer();
   });
@@ -354,18 +430,17 @@
   })();
 
   /* ---------------------------------------------------------------------------
-     6. COUPON + FORM STATE HELPERS
+     6. COUPON, FORM & ERROR HELPERS
      --------------------------------------------------------------------------- */
   function couponName() {
     const c = S.getCustomer();
     return state.form.name || (c ? c.name : '');
   }
 
-  function refreshCoupon() {
+  function recheckCoupon() {
     if (!state.coupon) return;
-    const r = S.validateCoupon(state.coupon.code, couponName());
+    const r = S.evaluateCoupon(state.coupon, couponName());
     if (r.ok) {
-      state.coupon = r.coupon;
       state.welcome = r.welcome;
     } else {
       state.coupon = null;
@@ -375,11 +450,10 @@
   }
 
   function prefillForm(force) {
-    const c = S.getCustomer();
-    if (!c) return;
-    if (force || !state.form.name) state.form.name = c.name;
-    if (force || !state.form.phone) state.form.phone = c.phone;
-    if ((force || !state.form.address) && c.address) state.form.address = c.address;
+    const saved = S.getSavedDelivery();
+    FIELDS.forEach(function (k) {
+      if ((force || !state.form[k]) && saved[k]) state.form[k] = saved[k];
+    });
   }
 
   function setCheckoutError(message) {
@@ -388,6 +462,28 @@
     if (!node) return;
     node.textContent = state.checkoutError;
     node.classList.toggle('hidden', !state.checkoutError);
+  }
+
+  function setFieldError(key, message) {
+    state.errors[key] = message || '';
+    const wrap = $('[data-field="' + key + '"]', el.cartBody);
+    if (!wrap) return;
+    wrap.classList.toggle('has-error', !!message);
+    const slot = $('[data-err="' + key + '"]', wrap);
+    if (slot) slot.textContent = message || '';
+  }
+
+  function applyErrors(errors) {
+    FIELDS.forEach(function (k) { setFieldError(k, (errors && errors[k]) || ''); });
+  }
+
+  function focusFirstError() {
+    const key = FIELDS.filter(function (k) { return state.errors[k]; })[0];
+    if (!key) return;
+    const input = $('#f_' + key);
+    if (!input) return;
+    input.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    input.focus({ preventScroll: true });
   }
 
   function isTypingInDrawer() {
@@ -502,13 +598,13 @@
     const lines = S.getCartLines();
     if (!lines.length) {
       el.cartBody.innerHTML = '<div class="empty">' + ico('bag', 54) +
-        '<div class="empty-title">Your cart is empty</div><p>Discover a candle worth lighting.</p>' +
+        '<div class="empty-title">Your cart is empty</div><p>Discover a candle or a gift box worth giving.</p>' +
         '<button class="btn btn-primary mt-1" type="button" data-act="explore">Explore Collection</button></div>';
       setFoot('');
       return;
     }
 
-    refreshCoupon();
+    recheckCoupon();
     const bill = S.calculateBill(state.coupon);
 
     const items = lines.map(function (l) {
@@ -532,7 +628,7 @@
 
     el.cartBody.innerHTML =
       '<div class="cart-list">' + items + '</div>' +
-      (bill.hasUnavailable ? '<p class="coupon-msg err">Some candles are out of stock. Please remove them to continue.</p>' : '') +
+      (bill.hasUnavailable ? '<p class="coupon-msg err">Some items are out of stock. Please remove them to continue.</p>' : '') +
       shipNudgeHTML(bill) +
       couponBlockHTML() +
       '<div><p class="block-title">Order Summary</p>' + billHTML(billFromCart(bill)) + '</div>';
@@ -544,10 +640,16 @@
     );
   }
 
+  function fieldHTML(key, label, inputHTML) {
+    return '<div class="field' + (state.errors[key] ? ' has-error' : '') + '" data-field="' + key + '">' +
+      '<label for="f_' + key + '">' + label + '</label>' + inputHTML +
+      '<span class="field-error" data-err="' + key + '">' + esc(state.errors[key] || '') + '</span></div>';
+  }
+
   function renderCheckout() {
     el.cartTitle.textContent = 'Checkout';
     prefillForm(false);
-    refreshCoupon();
+    recheckCoupon();
 
     const s = S.getSettings();
     const bill = S.calculateBill(state.coupon);
@@ -563,9 +665,20 @@
 
     const details =
       '<div class="stack"><p class="block-title">Delivery Details</p>' +
-        '<div class="field"><label for="fName">Full Name</label><input id="fName" type="text" data-form="name" autocomplete="name" placeholder="Your full name" value="' + esc(state.form.name) + '"></div>' +
-        '<div class="field"><label for="fPhone">Mobile Number</label><input id="fPhone" type="tel" inputmode="numeric" maxlength="10" data-form="phone" autocomplete="tel-national" placeholder="10-digit mobile number" value="' + esc(state.form.phone) + '"></div>' +
-        '<div class="field"><label for="fAddress">Delivery Address</label><textarea id="fAddress" data-form="address" autocomplete="street-address" placeholder="House no., street, area, city, PIN code">' + esc(state.form.address) + '</textarea></div>' +
+        fieldHTML('name', 'Full Name',
+          '<input id="f_name" type="text" data-form="name" autocomplete="name" placeholder="Your full name" value="' + esc(state.form.name) + '">') +
+        '<div class="field-row">' +
+          fieldHTML('phone', 'Mobile Number',
+            '<input id="f_phone" type="tel" inputmode="numeric" maxlength="10" data-form="phone" autocomplete="tel-national" placeholder="10-digit number" value="' + esc(state.form.phone) + '">') +
+          fieldHTML('pincode', 'Pincode',
+            '<input id="f_pincode" type="text" inputmode="numeric" maxlength="6" data-form="pincode" autocomplete="postal-code" placeholder="6-digit pincode" value="' + esc(state.form.pincode) + '">') +
+        '</div>' +
+        fieldHTML('flat', 'Flat / House No.',
+          '<input id="f_flat" type="text" maxlength="60" data-form="flat" autocomplete="address-line1" placeholder="Flat / House no., building" value="' + esc(state.form.flat) + '">') +
+        fieldHTML('area', 'Area / Street',
+          '<input id="f_area" type="text" maxlength="100" data-form="area" autocomplete="address-line2" placeholder="Area, street, locality" value="' + esc(state.form.area) + '">') +
+        fieldHTML('landmark', 'Landmark',
+          '<input id="f_landmark" type="text" maxlength="100" data-form="landmark" autocomplete="off" placeholder="e.g. Near City Mall" value="' + esc(state.form.landmark) + '">') +
       '</div>';
 
     const payOptions =
@@ -597,8 +710,8 @@
           '<button class="btn btn-outline btn-sm" type="button" data-act="copy-upi">' + ico('copy', 16) + 'Copy UPI ID</button>' +
           '<p class="upi-steps">Scan the QR or tap the button, complete the payment, then enter the UTR / Transaction ID from your payment app below.</p>' +
         '</div>' +
-        '<div class="field"><label for="fUtr">UTR / Transaction ID</label>' +
-          '<input id="fUtr" type="text" data-form="utr" maxlength="22" autocomplete="off" autocapitalize="characters" placeholder="e.g. 412345678901" value="' + esc(state.form.utr) + '"></div>';
+        '<div class="field"><label for="f_utr">UTR / Transaction ID</label>' +
+          '<input id="f_utr" type="text" data-form="utr" maxlength="22" autocomplete="off" autocapitalize="characters" placeholder="e.g. 412345678901" value="' + esc(state.form.utr) + '"></div>';
     } else {
       payPanel = '<div class="ship-nudge"><span>Please keep <b>' + inr(bill.total) + '</b> ready. You pay in cash when your order arrives at your doorstep.</span></div>';
     }
@@ -610,11 +723,16 @@
       '<div class="stack">' + payPanel + '</div>' +
       '<div><p class="block-title">Order Summary</p>' + billHTML(billFromCart(bill)) + '</div>';
 
+    const label = 'Place Order · ' + inr(bill.total);
     setFoot(
       '<p class="coupon-msg err' + (state.checkoutError ? '' : ' hidden') + '" id="checkoutError" role="alert">' + esc(state.checkoutError) + '</p>' +
-      '<button class="btn btn-primary btn-lg btn-block" type="button" data-act="place-order"' + (canPay ? '' : ' disabled') + '>Place Order &middot; ' + inr(bill.total) + '</button>' +
+      '<button class="btn btn-primary btn-lg btn-block" type="button" id="placeBtn" data-act="place-order" data-label="' + esc(label) + '"' + (canPay ? '' : ' disabled') + '>' + esc(label) + '</button>' +
       '<button class="btn btn-ghost btn-block" type="button" data-act="to-cart">' + ico('arrow-left', 18) + 'Back to Cart</button>'
     );
+  }
+
+  function kvRow(label, value) {
+    return '<dt>' + label + '</dt><dd>' + esc(value) + '</dd>';
   }
 
   function renderSuccess() {
@@ -625,7 +743,8 @@
       return;
     }
     el.cartTitle.textContent = 'Order Placed';
-    const first = esc(o.customer.name.split(' ')[0]);
+    const c = o.customer;
+    const first = esc(c.name.split(' ')[0]);
     const payLine = o.payment.method === 'UPI'
       ? 'Payment reference <b>' + esc(o.payment.utr) + '</b> received. We will verify it and confirm your order shortly.'
       : 'Please keep <b>' + inr(o.bill.total) + '</b> ready. You pay in cash on delivery.';
@@ -638,12 +757,15 @@
         '<p class="text-soft">' + payLine + '</p>' +
       '</div>' +
       '<div><p class="block-title">Order Summary</p>' + billHTML(billFromOrder(o)) + '</div>' +
-      '<div class="bill">' +
-        billRow('Name', esc(o.customer.name)) +
-        billRow('Mobile', '+91 ' + esc(o.customer.phone)) +
-        billRow('Payment', o.payment.method === 'UPI' ? 'UPI' : 'Cash on Delivery') +
-      '</div>' +
-      '<p class="hint text-center">Delivering to: ' + esc(o.customer.address) + '</p>';
+      '<div><p class="block-title">Delivering To</p>' +
+        '<div class="bill" style="padding:14px 16px"><dl class="kv">' +
+          kvRow('Name', c.name) +
+          kvRow('Mobile', '+91 ' + c.phone) +
+          kvRow('Address', c.flat + ', ' + c.area) +
+          kvRow('Landmark', c.landmark) +
+          kvRow('Pincode', c.pincode) +
+          kvRow('Payment', o.payment.method === 'UPI' ? 'UPI' : 'Cash on Delivery') +
+        '</dl></div></div>';
 
     setFoot(
       '<button class="btn btn-primary btn-lg btn-block" type="button" data-close>Continue Shopping</button>' +
@@ -667,45 +789,18 @@
   }
 
   /* ---------------------------------------------------------------------------
-     9. PLACE ORDER
+     9. COUPON + PLACE ORDER
      --------------------------------------------------------------------------- */
-  function placeOrderNow() {
-    if (state.placing) return;
-    state.placing = true;
-    const res = S.placeOrder({
-      customer: { name: state.form.name, phone: state.form.phone, address: state.form.address },
-      method: state.payMethod,
-      utr: state.form.utr,
-      couponCode: state.coupon ? state.coupon.code : ''
-    });
-    state.placing = false;
-
-    if (!res.ok) {
-      setCheckoutError(res.message);
-      toast(res.message, 'error');
-      return;
-    }
-    state.lastOrder = res.order;
-    state.coupon = null;
-    state.couponCode = '';
-    state.couponMsg = null;
-    state.welcome = '';
-    state.form.utr = '';
-    state.checkoutError = '';
-    state.view = 'success';
-    updateBadge(false);
-    renderDrawer();
-    el.cartBody.scrollTop = 0;
-    toast('Order placed successfully', 'success');
-  }
-
-  /* ---------------------------------------------------------------------------
-     10. DRAWER EVENTS (delegated)
-     --------------------------------------------------------------------------- */
-  function applyCouponNow() {
+  async function applyCouponNow() {
+    if (state.couponBusy) return;
     const input = $('#couponInput');
     if (input) state.couponCode = input.value.trim().toUpperCase();
-    const r = S.validateCoupon(state.couponCode, couponName());
+    state.couponBusy = true;
+    const btn = $('[data-act="apply-coupon"]', el.cartBody);
+    if (btn) { btn.disabled = true; btn.textContent = 'Checking...'; }
+
+    const r = await S.validateCoupon(state.couponCode, couponName());
+    state.couponBusy = false;
     if (r.ok) {
       state.coupon = r.coupon;
       state.welcome = r.welcome;
@@ -720,6 +815,70 @@
     renderDrawer();
   }
 
+  function setPlaceBusy(busy) {
+    const b = $('#placeBtn');
+    if (!b) return;
+    b.disabled = busy;
+    b.textContent = busy ? 'Placing order...' : b.getAttribute('data-label');
+  }
+
+  async function placeOrderNow() {
+    if (state.placing) return;
+
+    const check = S.validateDelivery(state.form);
+    if (!check.ok) {
+      applyErrors(check.errors);
+      setCheckoutError('Please complete the highlighted delivery details.');
+      focusFirstError();
+      return;
+    }
+    applyErrors({});
+    setCheckoutError('');
+
+    state.placing = true;
+    setPlaceBusy(true);
+    const res = await S.placeOrder({
+      customer: {
+        name: state.form.name,
+        phone: state.form.phone,
+        pincode: state.form.pincode,
+        flat: state.form.flat,
+        area: state.form.area,
+        landmark: state.form.landmark
+      },
+      method: state.payMethod,
+      utr: state.form.utr,
+      couponCode: state.coupon ? state.coupon.code : ''
+    });
+    state.placing = false;
+
+    if (!res.ok) {
+      if (res.errors) applyErrors(res.errors);
+      setCheckoutError(res.message);
+      toast(res.message, 'error');
+      setPlaceBusy(false);
+      if (res.errors) focusFirstError();
+      return;
+    }
+
+    state.lastOrder = res.order;
+    state.coupon = null;
+    state.couponCode = '';
+    state.couponMsg = null;
+    state.welcome = '';
+    state.form.utr = '';
+    state.errors = {};
+    state.checkoutError = '';
+    state.view = 'success';
+    updateBadge(false);
+    renderDrawer();
+    el.cartBody.scrollTop = 0;
+    toast('Order placed successfully', 'success');
+  }
+
+  /* ---------------------------------------------------------------------------
+     10. DRAWER EVENTS (delegated)
+     --------------------------------------------------------------------------- */
   el.drawer.addEventListener('click', function (e) {
     const t = e.target.closest('[data-act]');
     if (!t) return;
@@ -757,7 +916,7 @@
       if (state.lastOrder) copyText(state.lastOrder.id, 'Order ID copied');
     } else if (act === 'explore') {
       closeLayer();
-      scrollToCatalog();
+      scrollToSection('collection');
     }
   });
 
@@ -767,19 +926,28 @@
     if (key) {
       let v = t.value;
       if (key === 'phone') {
-        const c = v.replace(/\D/g, '').slice(0, 10);
-        if (c !== v) t.value = c;
-        v = c;
+        v = v.replace(/\D/g, '').slice(0, 10);
+      } else if (key === 'pincode') {
+        v = v.replace(/\D/g, '').slice(0, 6);
       } else if (key === 'utr') {
-        const c = v.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 22);
-        if (c !== v) t.value = c;
-        v = c;
+        v = v.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 22);
       }
+      if (v !== t.value) t.value = v;
       state.form[key] = v;
+      if (state.errors[key]) setFieldError(key, '');
       if (state.checkoutError) setCheckoutError('');
     } else if (t.id === 'couponInput') {
       state.couponCode = t.value.toUpperCase();
     }
+  });
+
+  // validate a delivery field as soon as the customer leaves it
+  el.drawer.addEventListener('focusout', function (e) {
+    const key = e.target && e.target.getAttribute ? e.target.getAttribute('data-form') : null;
+    if (!key || FIELDS.indexOf(key) < 0 || state.view !== 'checkout') return;
+    if (!state.form[key]) return;
+    const r = S.validateDelivery(state.form);
+    setFieldError(key, r.errors[key] || '');
   });
 
   el.drawer.addEventListener('change', function (e) {
@@ -805,11 +973,11 @@
     if (qr) { qr.classList.add('hidden'); return; }
     if (t.getAttribute('data-fb')) return;
     t.setAttribute('data-fb', '1');
-    t.src = S.placeholderImage;
+    t.src = S.defaultCandleImage;
   }, true);
 
   /* ---------------------------------------------------------------------------
-     11. SETTINGS: THEME, LOGIN, ADMIN ACCESS
+     11. VIP CLUB: MEMBERSHIP, QUICK LOGIN, THEME
      --------------------------------------------------------------------------- */
   function syncThemeSwitch() {
     const light = S.getTheme() === 'light';
@@ -822,34 +990,47 @@
     syncThemeSwitch();
   });
 
-  function renderLogin() {
+  function renderVip() {
     const c = S.getCustomer();
+    const perks =
+      '<div class="mt-2"><p class="block-title">Member Privileges</p><ul class="perk-list">' +
+      PERKS.map(function (p) {
+        return '<li class="perk"><span class="perk-icon">' + ico(p[0], 18) + '</span>' +
+          '<div><div class="perk-title">' + esc(p[1]) + '</div><div class="perk-text">' + esc(p[2]) + '</div></div></li>';
+      }).join('') +
+      '</ul></div>';
+
     if (c) {
-      el.loginArea.innerHTML =
-        '<div class="login-state">' +
-          '<div class="avatar">' + esc(c.name.charAt(0).toUpperCase()) + '</div>' +
-          '<div class="grow"><div class="login-name">' + esc(c.name) + '</div><div class="login-phone">+91 ' + esc(c.phone) + '</div></div>' +
-          '<button class="btn btn-sm" type="button" data-act="logout">Logout</button>' +
-        '</div>';
+      const since = new Date(c.loggedInAt).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+      el.vipBody.innerHTML =
+        '<div class="member-card">' +
+          '<div><div class="member-tier">Legend VIP</div><div class="member-name">' + esc(c.name) + '</div></div>' +
+          '<div class="member-meta">+91 ' + esc(c.phone) + ' &middot; Member since ' + esc(since) + '</div>' +
+        '</div>' +
+        perks +
+        '<div class="ship-nudge mt-2"><span>Have a VIP code? Apply it in your cart. Personal codes unlock with the name you joined with.</span></div>' +
+        '<button class="btn btn-block mt-2" type="button" data-act="logout">Log Out</button>';
     } else {
-      el.loginArea.innerHTML =
-        '<form class="stack" id="loginForm" novalidate>' +
+      el.vipBody.innerHTML =
+        '<p class="text-soft">Join the Legend VIP Club to unlock personal privileges and a faster checkout.</p>' +
+        perks +
+        '<form class="stack mt-2" id="loginForm" novalidate>' +
           '<div class="field"><label for="loginName">Your Name</label><input id="loginName" type="text" autocomplete="name" placeholder="Full name"></div>' +
           '<div class="field"><label for="loginPhone">Mobile Number</label><input id="loginPhone" type="tel" inputmode="numeric" maxlength="10" autocomplete="tel-national" placeholder="10-digit mobile number"></div>' +
           '<p class="coupon-msg err hidden" id="loginError" role="alert"></p>' +
-          '<button class="btn btn-primary btn-block" type="submit">Quick Login</button>' +
+          '<button class="btn btn-primary btn-block" type="submit">Join VIP Club</button>' +
         '</form>';
     }
   }
 
-  el.loginArea.addEventListener('input', function (e) {
+  el.vipBody.addEventListener('input', function (e) {
     if (e.target && e.target.id === 'loginPhone') {
       const c = e.target.value.replace(/\D/g, '').slice(0, 10);
       if (c !== e.target.value) e.target.value = c;
     }
   });
 
-  el.loginArea.addEventListener('submit', function (e) {
+  el.vipBody.addEventListener('submit', function (e) {
     e.preventDefault();
     const res = S.loginCustomer({ name: $('#loginName').value, phone: $('#loginPhone').value });
     const err = $('#loginError');
@@ -859,26 +1040,24 @@
       return;
     }
     prefillForm(true);
-    renderLogin();
-    toast('Welcome, ' + res.customer.name, 'success');
+    renderVip();
+    toast('Welcome to the VIP Club, ' + res.customer.name, 'success');
   });
 
-  el.loginArea.addEventListener('click', function (e) {
-    if (e.target.closest('[data-act="logout"]')) {
-      S.logoutCustomer();
-      state.form = { name: '', phone: '', address: '', utr: '' };
-      renderLogin();
-      toast('You have been logged out', '');
-    }
+  el.vipBody.addEventListener('click', function (e) {
+    if (!e.target.closest('[data-act="logout"]')) return;
+    S.logoutCustomer();
+    state.form = { name: '', phone: '', pincode: '', flat: '', area: '', landmark: '', utr: '' };
+    state.errors = {};
+    state.coupon = null;
+    state.welcome = '';
+    renderVip();
+    toast('You have been logged out', '');
   });
 
-  el.adminToggle.addEventListener('click', function () {
-    el.pinBox.classList.toggle('hidden');
-    if (!el.pinBox.classList.contains('hidden')) {
-      setTimeout(function () { el.pinInput.focus(); }, 60);
-    }
-  });
-
+  /* ---------------------------------------------------------------------------
+     12. HIDDEN ADMIN ACCESS (footer link opens the PIN prompt)
+     --------------------------------------------------------------------------- */
   function submitPin() {
     const now = Date.now();
     if (now < pinLockUntil) {
@@ -913,7 +1092,7 @@
   });
 
   /* ---------------------------------------------------------------------------
-     12. HEADER BEHAVIOUR
+     13. HEADER BEHAVIOUR
      --------------------------------------------------------------------------- */
   let headerCompact = false;
   window.addEventListener('scroll', function () {
@@ -925,30 +1104,45 @@
   }, { passive: true });
 
   /* ---------------------------------------------------------------------------
-     13. LIVE SYNC WITH THE STORE (admin changes, other tabs, cart updates)
+     14. LIVE SYNC WITH FIREBASE (admin edits, stock, prices, other tabs)
      --------------------------------------------------------------------------- */
   S.subscribe(function (scope) {
     if (scope === 'theme') {
       syncThemeSwitch();
       return;
     }
-    if (scope === 'cart' || scope === 'products' || scope === 'all') updateBadge(scope === 'cart');
-    if (scope === 'products' || scope === 'all') renderCatalog();
-    if ((scope === 'customer' || scope === 'all') && state.layer === 'settings') renderLogin();
+    if (scope === 'connection') {
+      const online = S.getStatus().online;
+      toast(online ? 'Back online' : 'You are offline', online ? 'success' : 'error');
+      return;
+    }
+    if (!state.loaded && scope !== 'cart') return;
 
-    if (state.layer !== 'cart' || state.placing) return;
-    if (scope === 'cart') {
-      renderDrawer();
-    } else if (scope === 'products' || scope === 'settings' || scope === 'coupons' || scope === 'customer' || scope === 'all') {
-      if (!isTypingInDrawer()) renderDrawer();
+    if (scope === 'products' || scope === 'status') renderAllRails();
+    if (scope === 'cart' || scope === 'products') updateBadge(scope === 'cart');
+    if (scope === 'customer') {
+      prefillForm(false);
+      if (state.layer === 'vip') renderVip();
+    }
+
+    if (state.layer === 'cart' && !state.placing) {
+      if (scope === 'cart') renderDrawer();
+      else if ((scope === 'products' || scope === 'settings') && !isTypingInDrawer()) renderDrawer();
     }
   });
 
   /* ---------------------------------------------------------------------------
-     14. BOOT
+     15. BOOT
      --------------------------------------------------------------------------- */
+  showSkeletons();
   syncThemeSwitch();
-  renderLogin();
-  renderCatalog();
+  renderVip();
   updateBadge(false);
+
+  S.connect('customer').then(function () {
+    state.loaded = true;
+    renderAllRails();
+    updateBadge(false);
+    if (state.layer === 'cart' && !state.placing) renderDrawer();
+  });
 })();
