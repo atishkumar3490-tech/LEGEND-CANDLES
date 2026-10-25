@@ -21,7 +21,7 @@
   const MAX_QTY = 10;
   const ORDER_STATUSES = ['Pending', 'Packed', 'Delivered', 'Cancelled'];
   const KEYS = {
-    db: 'legend_db_v1',
+    db: 'legend_db_v2',
     cart: 'legend_cart_v1',
     theme: 'legend_theme_v1',
     admin: 'legend_admin_session_v1'
@@ -172,50 +172,87 @@
   }
 
   /* ---------------------------------------------------------------------------
-     5. BUILT-IN CANDLE ARTWORK (inline SVG, no external images needed)
+     5. DEFAULT CANDLE ARTWORK
+     A dark matte hammered-glass jar with amber wax, a lit flame and a LEGEND
+     label on a slate surface. Drawn as inline SVG so it needs no files and is
+     used whenever a product has no uploaded photo.
+       variant 0 = front view     variant 1 = top view of the flame
      --------------------------------------------------------------------------- */
-  function flameSVG(cx, top) {
-    return '<g transform="translate(' + cx + ',' + top + ')">' +
-      '<path d="M0 0 C-16 30 -16 56 0 74 C16 56 16 30 0 0 Z" fill="#FFB347"/>' +
-      '<path d="M0 22 C-7 38 -7 52 0 64 C7 52 7 38 0 22 Z" fill="#FFF3C4"/></g>';
-  }
-
-  function candleArt(bgA, bgB, wax, variant) {
-    let body = '';
-    if (variant === 1) {
-      body =
-        '<circle cx="152" cy="200" r="120" fill="url(#glow)"/>' +
-        '<circle cx="256" cy="150" r="120" fill="url(#glow)"/>' +
-        '<rect x="110" y="262" width="84" height="178" rx="10" fill="' + wax + '"/>' +
-        '<rect x="110" y="262" width="84" height="16" rx="8" fill="#ffffff" fill-opacity=".18"/>' +
-        '<rect x="214" y="212" width="84" height="228" rx="10" fill="' + wax + '"/>' +
-        '<rect x="214" y="212" width="84" height="16" rx="8" fill="#ffffff" fill-opacity=".18"/>' +
-        '<rect x="149" y="246" width="6" height="20" rx="3" fill="#15151a"/>' +
-        '<rect x="253" y="196" width="6" height="20" rx="3" fill="#15151a"/>' +
-        flameSVG(152, 176) + flameSVG(256, 126);
-    } else {
-      body =
-        '<circle cx="200" cy="210" r="150" fill="url(#glow)"/>' +
-        '<rect x="112" y="238" width="176" height="204" rx="26" fill="#0b0b10"/>' +
-        '<rect x="124" y="270" width="152" height="160" rx="16" fill="' + wax + '"/>' +
-        '<rect x="124" y="270" width="152" height="22" rx="11" fill="#ffffff" fill-opacity=".18"/>' +
-        '<rect x="112" y="238" width="176" height="204" rx="26" fill="url(#jar)" stroke="#ffffff" stroke-opacity=".26" stroke-width="2"/>' +
-        '<path d="M200 322 L218 346 L200 370 L182 346 Z" fill="none" stroke="#7FA9FF" stroke-width="2.4"/>' +
-        '<rect x="197" y="214" width="6" height="58" rx="3" fill="#15151a"/>' +
-        flameSVG(200, 140);
-    }
-    const svg =
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500">' +
+  function candleArt(wax, waxLight, variant) {
+    const defs =
       '<defs>' +
-      '<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="' + bgA + '"/><stop offset="1" stop-color="' + bgB + '"/></linearGradient>' +
-      '<radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FFD58A" stop-opacity=".5"/><stop offset="1" stop-color="#FFD58A" stop-opacity="0"/></radialGradient>' +
-      '<linearGradient id="jar" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset=".5" stop-color="#ffffff" stop-opacity=".03"/><stop offset="1" stop-color="#ffffff" stop-opacity=".16"/></linearGradient>' +
-      '</defs>' +
-      '<rect width="400" height="500" fill="url(#bg)"/>' + body + '</svg>';
+      '<linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b2f38"/><stop offset=".55" stop-color="#1a1d23"/><stop offset="1" stop-color="#0c0d11"/></linearGradient>' +
+      '<linearGradient id="slab" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3b404b"/><stop offset="1" stop-color="#16181d"/></linearGradient>' +
+      '<radialGradient id="glow" cx="50%" cy="40%" r="55%"><stop offset="0" stop-color="#ffb35c" stop-opacity=".4"/><stop offset=".55" stop-color="#ff9b3d" stop-opacity=".1"/><stop offset="1" stop-color="#ff9b3d" stop-opacity="0"/></radialGradient>' +
+      '<linearGradient id="jar" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#14161b"/><stop offset=".22" stop-color="#2c3039"/><stop offset=".5" stop-color="#3b404b"/><stop offset=".8" stop-color="#1f2229"/><stop offset="1" stop-color="#101216"/></linearGradient>' +
+      '<radialGradient id="jarTop" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#3d424e"/><stop offset="1" stop-color="#15171c"/></radialGradient>' +
+      '<radialGradient id="waxg" cx="50%" cy="50%" r="60%"><stop offset="0" stop-color="' + waxLight + '"/><stop offset="1" stop-color="' + wax + '"/></radialGradient>' +
+      '<linearGradient id="flame" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ff8a1e"/><stop offset=".55" stop-color="#ffc766"/><stop offset="1" stop-color="#fff2c9"/></linearGradient>' +
+      '<linearGradient id="lab" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#a9c0f0"/><stop offset="1" stop-color="#6c97dc"/></linearGradient>' +
+      '<filter id="noise" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="4"/><feColorMatrix type="saturate" values="0"/></filter>' +
+      '<filter id="hammer" x="0" y="0" width="100%" height="100%"><feTurbulence type="turbulence" baseFrequency=".05 .12" numOctaves="2" seed="11"/><feColorMatrix type="saturate" values="0"/></filter>' +
+      '<filter id="b4" x="-30%" y="-80%" width="160%" height="260%"><feGaussianBlur stdDeviation="4"/></filter>' +
+      '<filter id="b10" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="10"/></filter>' +
+      '<clipPath id="jc"><rect x="118" y="190" width="164" height="212" rx="12"/></clipPath>' +
+      '</defs>';
+
+    let scene;
+    if (variant === 1) {
+      scene =
+        '<rect width="400" height="500" fill="url(#bg)"/>' +
+        '<rect width="400" height="500" filter="url(#noise)" opacity=".13"/>' +
+        '<circle cx="200" cy="262" r="166" fill="#000" opacity=".55" filter="url(#b10)"/>' +
+        '<circle cx="200" cy="250" r="156" fill="url(#jarTop)"/>' +
+        '<circle cx="200" cy="250" r="156" fill="none" stroke="#fff" stroke-opacity=".14" stroke-width="1.5"/>' +
+        '<circle cx="200" cy="250" r="138" fill="#0a0b0e"/>' +
+        '<circle cx="200" cy="250" r="128" fill="url(#waxg)"/>' +
+        '<circle cx="200" cy="250" r="128" fill="none" stroke="#000" stroke-opacity=".35" stroke-width="3"/>' +
+        '<circle cx="200" cy="250" r="90" fill="' + waxLight + '" opacity=".4" filter="url(#b10)"/>' +
+        '<circle cx="200" cy="250" r="60" fill="#ffb35c" opacity=".35" filter="url(#b10)"/>' +
+        '<circle cx="200" cy="250" r="22" fill="#ffd27a" opacity=".6" filter="url(#b10)"/>' +
+        '<rect x="198.4" y="238" width="3.2" height="18" rx="1.6" fill="#15110d"/>' +
+        '<ellipse cx="200" cy="236" rx="8" ry="14" fill="url(#flame)"/>' +
+        '<ellipse cx="200" cy="239" rx="3.4" ry="7" fill="#fff6dc"/>' +
+        '<text x="203" y="400" text-anchor="middle" font-family="Montserrat,Arial,sans-serif" font-size="10" font-weight="700" letter-spacing="7" fill="url(#lab)">LEGEND</text>';
+    } else {
+      scene =
+        '<rect width="400" height="500" fill="url(#bg)"/>' +
+        '<polygon points="0,376 400,330 400,500 0,500" fill="url(#slab)"/>' +
+        '<polygon points="0,376 400,330 400,336 0,382" fill="#ffffff" opacity=".07"/>' +
+        '<rect width="400" height="500" fill="url(#glow)"/>' +
+        '<rect width="400" height="500" filter="url(#noise)" opacity=".13"/>' +
+        '<ellipse cx="200" cy="405" rx="98" ry="11" fill="#000" opacity=".62" filter="url(#b4)"/>' +
+        '<g clip-path="url(#jc)">' +
+          '<rect x="118" y="190" width="164" height="212" fill="url(#jar)"/>' +
+          '<rect x="118" y="190" width="164" height="212" filter="url(#hammer)" opacity=".16"/>' +
+          '<rect x="128" y="196" width="7" height="196" rx="3.5" fill="#fff" opacity=".11"/>' +
+          '<rect x="268" y="204" width="3" height="184" rx="1.5" fill="#fff" opacity=".07"/>' +
+          '<rect x="118" y="388" width="164" height="14" fill="#000" opacity=".38"/>' +
+        '</g>' +
+        '<rect x="150" y="282" width="100" height="66" rx="3" fill="#0b0c0f" stroke="#fff" stroke-opacity=".08"/>' +
+        '<path d="M200 291 L209 300 L200 311 L191 300 Z" fill="none" stroke="#6da6dc" stroke-width="1.1"/>' +
+        '<path d="M191 300 H209 M196 295.5 L200 311 L204 295.5" fill="none" stroke="#6da6dc" stroke-width=".7" opacity=".8"/>' +
+        '<text x="202.5" y="331" text-anchor="middle" font-family="Montserrat,Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="5" fill="url(#lab)">LEGEND</text>' +
+        '<text x="201.2" y="341" text-anchor="middle" font-family="Montserrat,Arial,sans-serif" font-size="4.6" letter-spacing="2.4" fill="#79829a">HAND-POURED</text>' +
+        '<ellipse cx="200" cy="190" rx="82" ry="15" fill="#262a32"/>' +
+        '<ellipse cx="200" cy="191.5" rx="73" ry="11.5" fill="#0b0c0f"/>' +
+        '<ellipse cx="200" cy="193.5" rx="66" ry="9.5" fill="url(#waxg)"/>' +
+        '<ellipse cx="200" cy="193" rx="30" ry="4.5" fill="' + waxLight + '" opacity=".7"/>' +
+        '<ellipse cx="200" cy="193" rx="42" ry="6" fill="#ffb35c" opacity=".35" filter="url(#b4)"/>' +
+        '<ellipse cx="200" cy="190" rx="82" ry="15" fill="none" stroke="#fff" stroke-opacity=".16"/>' +
+        '<g transform="translate(200,193)">' +
+          '<circle cx="0" cy="-40" r="38" fill="#ffb35c" opacity=".5" filter="url(#b10)"/>' +
+          '<rect x="-1" y="-30" width="2" height="30" fill="#14100c"/>' +
+          '<path d="M0 -70 C-9 -54 -10 -42 0 -29 C10 -42 9 -54 0 -70 Z" fill="url(#flame)"/>' +
+          '<path d="M0 -51 C-4 -43 -4 -37 0 -32 C4 -37 4 -43 0 -51 Z" fill="#fff6dc" opacity=".92"/>' +
+        '</g>';
+    }
+
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500">' + defs + scene + '</svg>';
     return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
   }
 
-  const PLACEHOLDER = candleArt('#0d1a3f', '#05070f', '#1E6BFF', 0);
+  const DEFAULT_IMAGE = candleArt('#b9783a', '#e9b56f', 0);
 
   /* ---------------------------------------------------------------------------
      6. DEFAULT DATA
@@ -226,7 +263,7 @@
       gstEnabled: true,
       gstPercent: 18,
       deliveryCharge: 79,
-      freeDeliveryAbove: 1999,
+      freeDeliveryAbove: 0,
       upiId: '',
       codEnabled: true
     };
@@ -251,23 +288,23 @@
     return [
       buildProduct({
         id: 'p_obsidian_oud', name: 'Obsidian Oud', notes: 'Smoked Oud, Black Amber, Vetiver',
-        mrp: 2999, price: 2299, inStock: true, onlyLeft: 4, createdAt: base - 3,
-        images: [candleArt('#0d1a3f', '#05070f', '#27418a', 0), candleArt('#0d1a3f', '#05070f', '#27418a', 1)]
+        mrp: 3000, price: 2250, inStock: true, onlyLeft: 4, createdAt: base - 3,
+        images: [candleArt('#b9783a', '#e9b56f', 0), candleArt('#b9783a', '#e9b56f', 1)]
       }, null),
       buildProduct({
-        id: 'p_sapphire_noir', name: 'Sapphire Noir', notes: 'Bergamot, Midnight Iris, Cedarwood',
-        mrp: 2499, price: 1899, inStock: true, onlyLeft: 0, createdAt: base - 2,
-        images: [candleArt('#0a1f4d', '#04060f', '#1E6BFF', 0), candleArt('#0a1f4d', '#04060f', '#1E6BFF', 1)]
+        id: 'p_amber_noir', name: 'Amber Noir', notes: 'Amber, Vanilla Bean, Tonka',
+        mrp: 2499, price: 1999, inStock: true, onlyLeft: 0, createdAt: base - 2,
+        images: [candleArt('#a8682f', '#dda25b', 0), candleArt('#a8682f', '#dda25b', 1)]
       }, null),
       buildProduct({
-        id: 'p_velvet_amber', name: 'Velvet Amber', notes: 'Warm Amber, Vanilla Bean, Tonka',
+        id: 'p_smoked_cedar', name: 'Smoked Cedar', notes: 'Cedarwood, Leather, Dark Musk',
         mrp: 2199, price: 1699, inStock: true, onlyLeft: 2, createdAt: base - 1,
-        images: [candleArt('#2a1608', '#0a0705', '#b9803a', 0), candleArt('#2a1608', '#0a0705', '#b9803a', 1)]
+        images: [candleArt('#7c5a41', '#b88e69', 0), candleArt('#7c5a41', '#b88e69', 1)]
       }, null),
       buildProduct({
         id: 'p_midnight_jasmine', name: 'Midnight Jasmine', notes: 'Night Jasmine, White Musk, Sandalwood',
         mrp: 1999, price: 1499, inStock: true, onlyLeft: 0, createdAt: base,
-        images: [candleArt('#1a1030', '#07050f', '#cfc8ee', 0), candleArt('#1a1030', '#07050f', '#cfc8ee', 1)]
+        images: [candleArt('#c9a36e', '#ebd2a6', 0), candleArt('#c9a36e', '#ebd2a6', 1)]
       }, null)
     ];
   }
@@ -278,7 +315,7 @@
 
   function freshDB() {
     return {
-      version: 1,
+      version: 2,
       settings: defaultSettings(),
       products: seedProducts(),
       coupons: seedCoupons(),
@@ -306,7 +343,7 @@
       return cache;
     }
     cache = {
-      version: 1,
+      version: 2,
       settings: normalizeSettings(parsed.settings),
       products: Array.isArray(parsed.products)
         ? parsed.products.map(function (p) { return buildProduct(p, null); }).filter(function (p) { return p.name; })
@@ -549,7 +586,7 @@
     const coupon = loadDB().coupons.find(function (x) { return x.code === c; });
     if (!coupon) return fail('This coupon code is not valid.');
     if (coupon.customerName && normName(customerName) !== normName(coupon.customerName)) {
-      return fail('This is a personalised VIP coupon. Please log in or enter the name it was issued to.');
+      return fail('This is a personalised VIP coupon. Please join the VIP Club or enter the name it was issued to.');
     }
     return success({
       coupon: clone(coupon),
@@ -560,8 +597,17 @@
     });
   }
 
+  // How many personalised VIP privileges are waiting for this name (codes are never listed).
+  function countVipCoupons(name) {
+    const n = normName(name);
+    if (!n) return 0;
+    return loadDB().coupons.filter(function (c) {
+      return c.customerName && normName(c.customerName) === n;
+    }).length;
+  }
+
   /* ---------------------------------------------------------------------------
-     13. CUSTOMER LOGIN  (quick login: name + mobile)
+     13. CUSTOMER LOGIN / VIP CLUB  (quick login: name + mobile)
      --------------------------------------------------------------------------- */
   function cleanPhone(p) {
     let d = String(p == null ? '' : p).replace(/\D/g, '');
@@ -637,7 +683,7 @@
         price: p.price,
         mrp: p.mrp,
         qty: item.qty,
-        image: p.images[0] || PLACEHOLDER,
+        image: p.images[0] || DEFAULT_IMAGE,
         inStock: p.inStock,
         lineTotal: round2(p.price * item.qty),
         lineMrp: round2(p.mrp * item.qty)
@@ -692,6 +738,7 @@
   /* ---------------------------------------------------------------------------
      15. BILLING  (subtotal, VIP discount, GST, delivery, total)
      Prices are treated as GST-exclusive; GST is added on the discounted amount.
+     Free delivery is optional: set freeDeliveryAbove above 0 to enable it.
      --------------------------------------------------------------------------- */
   function calculateBill(coupon) {
     const s = loadDB().settings;
@@ -1029,11 +1076,12 @@
      21. PUBLIC API
      --------------------------------------------------------------------------- */
   global.LegendStore = {
-    version: '1.0.0',
+    version: '2.0.0',
     brand: BRAND,
     maxQty: MAX_QTY,
     orderStatuses: ORDER_STATUSES.slice(),
-    placeholderImage: PLACEHOLDER,
+    defaultCandleImage: DEFAULT_IMAGE,
+    placeholderImage: DEFAULT_IMAGE,
 
     formatINR: formatINR,
     formatDateTime: formatDateTime,
@@ -1069,6 +1117,7 @@
     addCoupon: addCoupon,
     deleteCoupon: deleteCoupon,
     validateCoupon: validateCoupon,
+    countVipCoupons: countVipCoupons,
 
     getCustomer: getCustomer,
     loginCustomer: loginCustomer,
