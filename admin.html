@@ -6,49 +6,47 @@
   <meta name="theme-color" content="#070709">
   <meta name="robots" content="noindex, nofollow">
   <title>LEGEND | Admin Command Center</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M16 10h32l12 16-28 32L4 26z' fill='%231E6BFF'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 60'%3E%3Cpath d='M4 18L22 4H58L76 18L40 56Z' fill='none' stroke='%2362C9DD' stroke-width='4' stroke-linejoin='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="style.css">
   <script src="store.js"></script>
 </head>
 <body class="page-admin">
 
-  <!-- ===================== SVG SPRITE (logo + icons) ===================== -->
+  <!-- ===================== SVG SPRITE (wireframe logo + icons) ===================== -->
   <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
     <defs>
-      <symbol id="legend-diamond" viewBox="0 0 64 64">
-        <defs>
-          <linearGradient id="lgA" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#C9DEFF"/><stop offset="1" stop-color="#5E9BFF"/></linearGradient>
-          <linearGradient id="lgB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6AA2FF"/><stop offset="1" stop-color="#1E6BFF"/></linearGradient>
-          <linearGradient id="lgC" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2F7BFF"/><stop offset="1" stop-color="#0A3CB0"/></linearGradient>
-          <linearGradient id="lgD" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1E6BFF"/><stop offset="1" stop-color="#062B8A"/></linearGradient>
-        </defs>
-        <g stroke="#EAF2FF" stroke-opacity="0.6" stroke-width="1" stroke-linejoin="round">
-          <polygon points="16,10 48,10 42,26 22,26" fill="url(#lgA)"/>
-          <polygon points="16,10 22,26 4,26" fill="url(#lgB)"/>
-          <polygon points="48,10 60,26 42,26" fill="url(#lgC)"/>
-          <polygon points="4,26 22,26 32,58" fill="url(#lgC)"/>
-          <polygon points="22,26 42,26 32,58" fill="url(#lgD)"/>
-          <polygon points="42,26 60,26 32,58" fill="url(#lgB)"/>
+      <linearGradient id="lgWire" gradientUnits="userSpaceOnUse" x1="4" y1="4" x2="76" y2="56">
+        <stop offset="0" stop-color="#9fe6f2"/>
+        <stop offset="0.5" stop-color="#3ba3d2"/>
+        <stop offset="1" stop-color="#1e6bff"/>
+      </linearGradient>
+
+      <symbol id="legend-diamond" viewBox="0 0 80 60">
+        <g fill="none" stroke="url(#lgWire)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 18 L22 4 H58 L76 18 L40 56 Z" fill="#62c9dd" fill-opacity="0.07"/>
+          <path d="M4 18 H76"/>
+          <path d="M22 4 L30 18 L40 4 L50 18 L58 4"/>
+          <path d="M17 18 L40 56 M30 18 L40 56 M50 18 L40 56 M63 18 L40 56"/>
+          <path d="M30 18 L40 33 L50 18"/>
         </g>
-        <polygon points="19,12 30,12 25,24 21,24" fill="#FFFFFF" fill-opacity="0.28"/>
       </symbol>
 
       <symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
       <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
       <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></symbol>
       <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 4H5v16h4"/><path d="m16 8 4 4-4 4"/><path d="M20 12H9"/></symbol>
-      <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4"/><path d="m7 9 5-5 5 5"/><path d="M5 20h14"/></symbol>
       <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></symbol>
       <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 12a8.5 8.5 0 0 1-12.4 7.5L3 21l1.6-5.4A8.5 8.5 0 1 1 21 12z"/></symbol>
       <symbol id="i-bag" viewBox="0 0 24 24"><path d="M6 7h12l-1 13H7L6 7z"/><path d="M9 7a3 3 0 0 1 6 0"/></symbol>
       <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+      <symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v8h14v-8"/><path d="M12 8v12"/><path d="M12 8c-1-3-5-4-5-1.5S10 8 12 8zM12 8c1-3 5-4 5-1.5S14 8 12 8z"/></symbol>
     </defs>
   </svg>
 
   <!-- ===================== PIN GATE ===================== -->
   <div class="pin-gate" id="pinGate" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
     <div class="pin-card">
-      <div class="brand-logo" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#legend-diamond"/></svg></div>
+      <div class="brand-logo" aria-hidden="true"><svg viewBox="0 0 80 60"><use href="#legend-diamond"/></svg></div>
       <div class="brand-name">LEGEND</div>
       <h1 class="panel-title" id="gateTitle">Admin Access</h1>
       <p class="panel-sub">Enter your 4-digit PIN to open the command center.</p>
@@ -64,21 +62,26 @@
 
     <header class="admin-topbar">
       <div class="admin-brand">
-        <div class="brand-logo" aria-hidden="true"><svg viewBox="0 0 64 64"><use href="#legend-diamond"/></svg></div>
-        <div class="admin-brand-text"><strong>LEGEND</strong><span>Command Center</span></div>
+        <div class="brand-logo" aria-hidden="true"><svg viewBox="0 0 80 60"><use href="#legend-diamond"/></svg></div>
+        <div class="admin-brand-text">
+          <strong>LEGEND</strong>
+          <span><i class="live-dot demo" id="liveDot"></i><b id="connLabel">Connecting</b></span>
+        </div>
       </div>
       <div class="admin-top-actions">
         <button class="icon-btn" id="themeBtn" type="button" aria-label="Switch light or dark mode"></button>
         <a class="icon-btn" href="index.html" aria-label="Back to store">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-arrow-left"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-arrow-left"/></svg>
         </a>
         <button class="icon-btn" id="logoutBtn" type="button" aria-label="Log out of admin">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-logout"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-logout"/></svg>
         </button>
       </div>
     </header>
 
     <main class="admin-shell">
+
+      <div id="statusBanner" class="hidden" role="status"></div>
 
       <div class="stat-grid" id="statGrid"></div>
 
@@ -103,28 +106,35 @@
           <div class="panel-head">
             <div>
               <h2 class="panel-title" id="formTitle">Add New Product</h2>
-              <p class="panel-sub">Images swipe sideways on the storefront. The first image is the cover.</p>
+              <p class="panel-sub">The category decides which horizontal section the product appears in on the storefront.</p>
             </div>
           </div>
 
           <form id="productForm" novalidate autocomplete="off">
             <div class="form-grid">
               <div class="field field-full">
+                <label for="pCategory">Category</label>
+                <select id="pCategory">
+                  <option value="candles">Candles &middot; The Collection</option>
+                  <option value="hampers">Hampers &middot; Luxury Gifting</option>
+                </select>
+              </div>
+              <div class="field field-full">
                 <label for="pName">Product Name</label>
                 <input id="pName" type="text" maxlength="60" placeholder="e.g. Obsidian Oud">
               </div>
               <div class="field field-full">
-                <label for="pNotes">Scent Notes</label>
-                <input id="pNotes" type="text" maxlength="120" placeholder="e.g. Smoked Oud, Black Amber, Vetiver">
-                <span class="hint">Separate notes with commas. They appear as chips on the product card.</span>
+                <label for="pNotes">Scent Notes / Box Contents</label>
+                <input id="pNotes" type="text" maxlength="140" placeholder="e.g. Smoked Oud, Black Amber, Vetiver">
+                <span class="hint">Separate items with commas. They appear as chips on the product card.</span>
               </div>
               <div class="field">
                 <label for="pMrp">MRP (&#8377;)</label>
-                <input id="pMrp" type="number" inputmode="decimal" min="0" step="any" placeholder="2999">
+                <input id="pMrp" type="number" inputmode="decimal" min="0" step="any" placeholder="3000">
               </div>
               <div class="field">
                 <label for="pPrice">Selling Price (&#8377;)</label>
-                <input id="pPrice" type="number" inputmode="decimal" min="0" step="any" placeholder="2299">
+                <input id="pPrice" type="number" inputmode="decimal" min="0" step="any" placeholder="2250">
               </div>
               <div class="field">
                 <label for="pLeft">&ldquo;Only X Left&rdquo; Badge</label>
@@ -132,13 +142,13 @@
               </div>
               <div class="field">
                 <label for="pVideo">Video URL (optional MP4)</label>
-                <input id="pVideo" type="url" placeholder="https://example.com/candle.mp4">
+                <input id="pVideo" type="url" placeholder="https://example.com/video.mp4">
               </div>
 
               <div class="toggle-card field-full">
                 <div>
                   <div class="setting-label">In Stock</div>
-                  <div class="setting-desc" id="pStockDesc">Customers can add this candle to their cart.</div>
+                  <div class="setting-desc" id="pStockDesc">Customers can add this to their cart.</div>
                 </div>
                 <label class="switch">
                   <input type="checkbox" id="pStock" checked aria-label="In stock">
@@ -147,19 +157,14 @@
               </div>
 
               <div class="stack field-full">
-                <span class="field-label">Gallery (swipe images)</span>
+                <span class="field-label">Gallery Images (swipe on the storefront)</span>
                 <div class="thumb-list" id="thumbList"></div>
-                <label class="upload-zone">
-                  <input type="file" id="imgFiles" accept="image/*" multiple>
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#i-upload"/></svg>
-                  <span id="uploadText">Upload from phone gallery</span>
-                </label>
                 <div class="field">
-                  <label for="imgUrls">Or paste image URLs (one per line)</label>
+                  <label for="imgUrls">Paste image URLs (one per line)</label>
                   <textarea id="imgUrls" rows="3" placeholder="https://example.com/candle-1.jpg&#10;https://example.com/candle-2.jpg"></textarea>
                 </div>
-                <button class="btn btn-outline btn-sm" id="addUrls" type="button">Add URLs to Gallery</button>
-                <span class="hint">Tap a thumbnail to make it the cover image. Uploaded photos are resized automatically to save space.</span>
+                <button class="btn btn-outline btn-sm" id="addUrls" type="button">Add to Gallery</button>
+                <span class="hint">The first image is the cover. Tap a thumbnail to make it the cover. Use direct image links (ending in .jpg, .png or .webp). With no image, a default LEGEND artwork is shown.</span>
               </div>
             </div>
 
@@ -177,7 +182,7 @@
               <p class="panel-sub" id="productCount">0 products</p>
             </div>
           </div>
-          <div id="storageMeter" class="mb-2"></div>
+          <div id="seedBox"></div>
           <div id="productList"></div>
         </div>
       </section>
@@ -189,7 +194,7 @@
             <div class="panel-head">
               <div>
                 <h2 class="panel-title">GST</h2>
-                <p class="panel-sub">Added on the discounted order value at checkout. Changes apply live.</p>
+                <p class="panel-sub">Added on the discounted order value at checkout. Changes apply live on the storefront.</p>
               </div>
             </div>
             <div class="toggle-card">
@@ -214,7 +219,7 @@
             <div class="panel-head">
               <div>
                 <h2 class="panel-title">Delivery</h2>
-                <p class="panel-sub">Set a flat charge and a free-delivery threshold.</p>
+                <p class="panel-sub">A flat delivery charge on every order.</p>
               </div>
             </div>
             <div class="form-grid">
@@ -223,9 +228,9 @@
                 <input id="deliveryCharge" type="number" inputmode="decimal" min="0" step="any" placeholder="79">
               </div>
               <div class="field">
-                <label for="freeAbove">Free Delivery Above (&#8377;)</label>
-                <input id="freeAbove" type="number" inputmode="decimal" min="0" step="any" placeholder="1999">
-                <span class="hint">Enter 0 to never offer free delivery.</span>
+                <label for="freeAbove">Free Delivery Above (&#8377;) &middot; optional</label>
+                <input id="freeAbove" type="number" inputmode="decimal" min="0" step="any" placeholder="0 = off">
+                <span class="hint">Leave at 0 to always charge delivery.</span>
               </div>
             </div>
             <div class="form-actions">
@@ -330,7 +335,7 @@
               </div>
             </div>
             <div class="form-actions">
-              <button class="btn btn-primary" type="submit">Create Coupon</button>
+              <button class="btn btn-primary" id="couponBtn" type="submit">Create Coupon</button>
             </div>
           </form>
         </div>
@@ -359,4 +364,4 @@
 
   <script src="admin.js"></script>
 </body>
-  </html>
+                                                      </html>
